@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Production Builds
+dist/
+dist-electron/
+build/
+frontend/dist/
+
+# Databases
+backend/chat_history.db
+
+# Environment variables
+.env
+
+# OS Files
+.DS_Store
+Thumbs.db

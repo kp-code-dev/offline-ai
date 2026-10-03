@@ -1,0 +1,39 @@
+{
+  "name": "offline-ai-workspace",
+  "version": "1.0.0",
+  "description": "Full-stack Gemma 4 Workspace",
+  "main": "electron.js",
+  "scripts": {
+    "install:all": "concurrently \"npm install --prefix backend\" \"npm install --prefix frontend\"",
+    "dev": "concurrently --kill-others-on-fail -n \"BACKEND,FRONTEND\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "desktop": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:all": "npm run build:frontend && electron-builder --mac --win --linux",
+    "build:mac": "npm run build:frontend && electron-builder --mac",
+    "build:win": "npm run build:frontend && electron-builder --win",
+    "build:linux": "npm run build:frontend && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.offlineai.desktop",
+    "productName": "Offline AI",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.productivity"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.5.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0"
+  }
+}
