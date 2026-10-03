@@ -3,6 +3,11 @@ const router = express.Router();
 const aiController = require('../controllers/ai.controller');
 const dbManager = require('../database');
 
+// Health check endpoint (for Render/Cloud deployments)
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is running!' });
+});
+
 // Stream generation
 router.post('/generate', aiController.generateText);
 
