@@ -7,12 +7,12 @@ const errorHandler = require('./middleware/error.middleware');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware - Configure CORS to allow your Vercel frontend
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+// Middleware - Configure CORS to allow all origins (prevents strict URL mismatch errors)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Routes
