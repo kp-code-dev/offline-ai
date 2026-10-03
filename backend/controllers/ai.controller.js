@@ -11,15 +11,30 @@ const generateText = async (req, res, next) => {
     // Save User message to SQLite
     dbManager.insertMessage.run('user', prompt);
 
-    // Call the LLM natively
+    // 1. Determine if we are using Groq (Cloud) or Ollama (Local)
+    const useGroq = !!process.env.GROQ_API_KEY;
     const fetch = (await import('node-fetch')).default;
-    const ollamaUrl = process.env.LLM_URL || 'http://127.0.0.1:11434/api/generate';
+    
+    let url, headers, body;
 
-    const response = await fetch(ollamaUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gemma', prompt: prompt })
-    });
+    if (useGroq) {
+      url = 'https://api.groq.com/openai/v1/chat/completions';
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      };
+      body = JSON.stringify({
+        model: 'gemma2-9b-it',
+        messages: [{ role: 'user', content: prompt }],
+        stream: true
+      });
+    } else {
+      url = process.env.LLM_URL || 'http://127.0.0.1:11434/api/generate';
+      headers = { 'Content-Type': 'application/json' };
+      body = JSON.stringify({ model: 'gemma', prompt: prompt });
+    }
+
+    const response = await fetch(url, { method: 'POST', headers, body });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -33,16 +48,36 @@ const generateText = async (req, res, next) => {
 
     response.body.on('data', (chunk) => {
       try {
-        const jsonChunks = chunk.toString().split('\n').filter(Boolean);
-        for (const jsonStr of jsonChunks) {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed.response) {
-            res.write(parsed.response);
-            fullAiResponse += parsed.response;
+        const textChunk = chunk.toString();
+        
+        if (useGroq) {
+          // Parse Groq/OpenAI SSE format
+          const lines = textChunk.split('\n').filter(line => line.trim() !== '');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.replace('data: ', '');
+              if (dataStr === '[DONE]') continue;
+              const parsed = JSON.parse(dataStr);
+              const content = parsed.choices[0]?.delta?.content || '';
+              if (content) {
+                res.write(content);
+                fullAiResponse += content;
+              }
+            }
+          }
+        } else {
+          // Parse Ollama raw JSON format
+          const jsonChunks = textChunk.split('\n').filter(Boolean);
+          for (const jsonStr of jsonChunks) {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.response) {
+              res.write(parsed.response);
+              fullAiResponse += parsed.response;
+            }
           }
         }
       } catch (e) {
-        console.error("Error parsing Ollama chunk:", e);
+        console.error("Error parsing AI chunk:", e);
       }
     });
 
