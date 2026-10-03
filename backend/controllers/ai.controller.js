@@ -11,9 +11,9 @@ const generateText = async (req, res, next) => {
     // Save User message to SQLite
     dbManager.insertMessage.run('user', prompt);
 
-    // Call Ollama natively without Python
+    // Call the LLM natively
     const fetch = (await import('node-fetch')).default;
-    const ollamaUrl = 'http://127.0.0.1:11434/api/generate';
+    const ollamaUrl = process.env.LLM_URL || 'http://127.0.0.1:11434/api/generate';
 
     const response = await fetch(ollamaUrl, {
       method: 'POST',
